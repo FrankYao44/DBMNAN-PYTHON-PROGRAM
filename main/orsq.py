@@ -10,7 +10,7 @@
  for:
  /n
 '''
-import re
+import re, sqlite3
 class Cheaker(object):
     #this class can get a str,and turn it into Cheaker
     def __init__(self,input_str):
@@ -48,8 +48,34 @@ class Cheaker(object):
         self.input_str=input_str
         self.key=key
         self.result=result
+class Sqlcom(object):
+    def __init__(self,cheaker):
+        if not isinstance(cheaker,Cheaker):
+            raise ValueError
+        conn=sqlite3.connect('test.db')
+        cur=conn.cursor()
+        self.cheaker=cheaker
+        self.cur=cur
+    def __writein(self):
+        cur=self.cur
+        passage=self.cheaker.result
+        _exe,_cu,_te='','',''
+        for k,v in passage.items():
+            if k=='table':
+                _exe='insert into %s '%(v)
+            else:
+                _cu=_cu+'%s,'%(k)
+                _te=_te+'\'%s\','%(v)
+        _execute='%s(%s) values(%s)'%(_exe,_cu[:-1],_te[:-1])
+        cur.execute(_execute)
+
+    def doing_sql(self):
+        key_dict={'/w':self.__writein}
+        key_dict[self.cheaker.key]()
         
-            
+        
 if __name__=='__main__':
-    r=Cheaker('/w\nkey\nvalue\nkey2\nvalue2\n')
+    r=Cheaker('/w\ntable\nuser\nkey\nvalue\nkey2\nvalue2\n')
     print(r.key,r.result)
+    s=Sqlcom(r)
+    s.doing_sql()
