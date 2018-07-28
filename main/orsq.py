@@ -24,7 +24,7 @@ class Cheaker(object):
                 else:
                     result=result+_
         def cheakstr(input_str):
-            repw=re.compile(r'^(\/w)\n((.*\n.*\n)+)$')                
+            repw=re.compile(r'^(\/\w)\n((.*\n.*\n)+)$')                
             restr=repw.match(input_str)
             if restr==None:
                 raise ValueError
@@ -44,38 +44,66 @@ class Cheaker(object):
                 else:v.append(a)
             except StopIteration:
                 break
-        result=dict(zip(k,v))
+        dict_passage=dict(zip(k,v))
+        self.tablename=dict_passage['table']
+        dict_passage.pop('table')
         self.input_str=input_str
         self.key=key
-        self.result=result
+        self.dict_passage=dict_passage
 class Sqlcom(object):
     def __init__(self,cheaker):
         if not isinstance(cheaker,Cheaker):
             raise ValueError
+        self.cheaker=cheaker
+    def __writein(self):
+        passage=self.cheaker.dict_passage
+        tablename=self.cheaker.tablename
+        #insert into tablename (key1,key2...) values(value1,value2...) 
+        _exe,_cu,_te='insert into %s '%(tablename),'',''
+        for k,v in passage.items():
+            _cu=_cu+'%s,'%(k)
+            _te=_te+'\'%s\','%(v)
+        _execute='%s(%s) values(%s)'%(_exe,_cu[:-1],_te[:-1])
+        self.cur.execute(_execute)
+    def __createtable(self):
+        passage=self.cheaker.dict_passage
+        #create table tablename (key1 varchar(value1),key2 varchar(value2))
+        _exe,_cute='create table %s'%(self.cheaker.tablename),''
+        for k,v in passage.items():
+            if 'p' in v:
+                _cute=_cute+'%s varchar(%s) primary key,'%(k,v.strip('p'))
+            else:
+                _cute=_cute+'%s varchar(%s),'%(k,v)
+        _execute='%s (%s)'%(_exe,_cute[:-1])
+        self.cur.execute(_execute)
+    def __search(self):
+        passage=self.cheaker.dict_passage
+        # select * from tablename where key=? (value,)
+        _exe,_cu,_te='select * from %s where'%(self.cheaker.tablename),'',[]
+        for k,v in passage.items():
+            _cu=_cu+' %s=? and'%(k)
+            _te.append(v)
+        _execu=_exe+_cu[:-3]
+        print(_execu)
+        self.cur.execute(_execu,_te)
+        return self.cur.fetchall()
+    def doing_sql(self):
         conn=sqlite3.connect('test.db')
         cur=conn.cursor()
-        self.cheaker=cheaker
         self.cur=cur
-    def __writein(self):
-        cur=self.cur
-        passage=self.cheaker.result
-        _exe,_cu,_te='','',''
-        for k,v in passage.items():
-            if k=='table':
-                _exe='insert into %s '%(v)
-            else:
-                _cu=_cu+'%s,'%(k)
-                _te=_te+'\'%s\','%(v)
-        _execute='%s(%s) values(%s)'%(_exe,_cu[:-1],_te[:-1])
-        cur.execute(_execute)
-
-    def doing_sql(self):
-        key_dict={'/w':self.__writein}
-        key_dict[self.cheaker.key]()
-        
+        key_dict={'/w':self.__writein,'/c':self.__createtable,'/s':self.__search}
+        a=key_dict[self.cheaker.key]()
+        cur.close()
+        conn.commit()
+        conn.close()
+        return a
         
 if __name__=='__main__':
+    #r=Cheaker('/c\ntable\nuser\nkey\n20p\nkey2\n20\n')
+    #Sqlcom(r).doing_sql()
     r=Cheaker('/w\ntable\nuser\nkey\nvalue\nkey2\nvalue2\n')
-    print(r.key,r.result)
+    #print(r.key,r.tablename,r.dict_passage)
     s=Sqlcom(r)
     s.doing_sql()
+    r=Cheaker('/s\ntable\nuser\nkey2\nvalue2\n')
+    print(Sqlcom(r).doing_sql())
