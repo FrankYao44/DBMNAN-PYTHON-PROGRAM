@@ -4,8 +4,8 @@
  this is a project which allow user run sql by input str
  programmer: Frank Yao 44
  main eof:
- /?\nkey\nvalue\n......
- for example: /w\ntable\nEnglish\nid\n1\nword\nmy
+ /?##key##value##......
+ for example: /w##table##English##id##1##word##my
  /?:this is a v which show the action
  for:
  /n
@@ -17,14 +17,17 @@ class Cheaker(object):
         
         def group(in_str):
             result=''
-            for _ in in_str:
-                if _=='\n':
+            i=0
+            while i<len(in_str):
+                if in_str[i]=='#' and in_str[i+1]=='#':
                     yield result
                     result=''
+                    i=i+2
                 else:
-                    result=result+_
+                    result=result+in_str[i]
+                    i=i+1
         def cheakstr(input_str):
-            repw=re.compile(r'^(\/\w)\n((.*\n.*\n)+)$')                
+            repw=re.compile(r'^(/\w)##((.*##.*##)+)$')                
             restr=repw.match(input_str)
             if restr==None:
                 raise ValueError
@@ -105,12 +108,26 @@ class Sqlcom(object):
         _execu=_exe+_cu[:-3]
         self.cur.execute(_execu,_te)
         return self.cur.rowcount
+    def __update(self):
+        passage=self.cheaker.dict_passage
+        # update tablename set key='newvalue' where key2=? (value2,)
+        _exe,_cu,_t,_e='update %s set '%(self.cheaker.tablename),'','',[]
+        last_k=list(passage.keys())[-1]
+        last_v=passage[last_k]
+        _cu='%s=\'%s\' where'%(last_k,last_v)
+        passage.pop(last_k)
+        for k,v in passage.items():
+            _t=_t+' %s=? and'%(k)
+            _e.append(v)
+        _execut=_exe+_cu+_t[:-3]
+        self.cur.execute(_execut,_e)
+        return 1
     def doing_sql(self):
         conn=sqlite3.connect('test.db')
         cur=conn.cursor()
         self.cur=cur
         try:
-            key_dict={'/w':self.__writein,'/c':self.__createtable,'/s':self.__search,'/d':self.__delete}
+            key_dict={'/w':self.__writein,'/c':self.__createtable,'/s':self.__search,'/d':self.__delete,'/u':self.__update}
             result=key_dict[self.cheaker.key]()
         finally:
             cur.close()
@@ -119,11 +136,12 @@ class Sqlcom(object):
         return result
         
 if __name__=='__main__':
-    #r=Cheaker('/c\ntable\nnnnuser\nid\n20\nname\n20\nsex\n1p\n')
+    #r=Cheaker('/c##table##nnuser##id##20##name##20##sex##1p##')
     #Sqlcom(r).doing_sql()
-    r=Cheaker('/w\ntable\nnnUser\nid\n\n\nsex\n9\n')
+    #r=Cheaker('/w##table##nnUser##id##00000##sex##9##')
     #print(r.key,r.tablename,r.dict_passage)
-    s=Sqlcom(r)
-    s.doing_sql()
-    r=Cheaker('/s\ntable\nnnUser\nname\n%s\n'%(None))
+    #s=Sqlcom(r)
+    #s.doing_sql()
+    r=Cheaker('/u##table##nnUser##sex##1##name##ddmm##')
     print(Sqlcom(r).doing_sql())
+
