@@ -1,18 +1,8 @@
-#sqlite.py
+#rom_sqlite.py
 #coding:utf-8
-import sqlite3, os, pickle      
+import sqlite3, os, pickle,re      
 class sqlite_(object):
-    def __init__(self,key,passege):
-        with open('dict_info.txt','rb') as f:
-            d=pickle.load(f)
-        conn=sqlite3.connect('mnandb.db')
-        cur=conn.cursor()
-        #pickle d ,it's a dict.there are os.path, table key list
-        self.d=d
-        self.key=key
-        self.passege=passege
-        self.cur=cur
-    def newkey(self,name,*keys):
+    def __newkey(self,name,*keys):
         d=self.d
         tablekeyl=d['tablekeylist']
         if name in tablekeyl:
@@ -24,10 +14,21 @@ class sqlite_(object):
         with open('dict_info.txt','wb') as f:
             f.truncate()
             d=pickle.dump(d,f)
-        
+    def __wrieintable(self):
+        self.cur.execute('insert into %s ')
+    def __init__(self,key,passege):
+        with open('dict_info.txt','rb') as f:
+            d=pickle.load(f)
+        conn=sqlite3.connect('mnandb.db')
+        cur=conn.cursor()
+        #pickle d ,it's a dict.there are os.path, table key list
+        self.d=d
+        self.key=key
+        self.passege=passege
+        self.cur=cur
 if __name__=="__main__":
     a=sqlite_('a','aaa')
-    a.newkey('cxasssaaa','bbb')
+    #a.newkey('cxasssaaa','bbb')
         
         
         

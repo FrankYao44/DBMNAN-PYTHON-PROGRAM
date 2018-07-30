@@ -1,11 +1,11 @@
 #coding:utf-8
 #main.py
-import sqlite
+import rom_sqlite
 import display
 import sqlite3
 import re, time
 import logging
-R_M=re.compile(r'^(\/\w)(.{0,1023})$')
+R_M=re.compile(r'^(\/\w)(.{0,1023})(\@\@)|.(.{0,1023})(\@\@)|.(.{0,1023})(\@\@)|.(.{0,1023})$')
 #R_A=re.compile(r'^(\/\w)(.{1,32}(.{0,1023}))$')
 def cheaker(words):
     def catchkeys(words):
